@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>가짜돈 1,000만원 모의투자</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#16181d; --muted:#6b7280; --line:#e5e7eb; --up:#dc2626; --down:#2563eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1115; --card:#181b21; --text:#e8eaee; --muted:#9aa1ad; --line:#2a2f38; --up:#f87171; --down:#60a5fa; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif; line-height:1.5; }
+  .wrap { max-width:1000px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:20px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .grp { grid-column:1/-1; font-size:12px; color:var(--muted); font-weight:600; margin-top:4px; }
+  .card .t { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .card .v { font-size:22px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
+  .card .r { font-size:14px; font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .box h2 { font-size:16px; margin:0 0 10px; }
+  svg text { fill:var(--muted); font-size:11px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+  th, td { padding:7px 8px; border-bottom:1px solid var(--line); text-align:right; }
+  th:first-child, td:first-child { text-align:left; }
+  th { color:var(--muted); font-weight:600; }
+  .tbl { overflow-x:auto; }
+  .note { font-size:12px; color:var(--muted); margin-top:8px; }
+  .why { text-align:left; color:var(--muted); font-size:12px; }
+  details.study { margin-top:6px; }
+  details.study summary { cursor:pointer; color:var(--down); font-weight:600; }
+  details.study dl, dl.gl { margin:8px 0 0; }
+  details.study dt { font-weight:700; color:var(--text); margin-top:8px; }
+  dl.gl dt { font-weight:700; margin-top:10px; }
+  details.study dd, dl.gl dd { margin:2px 0 0; line-height:1.6; color:var(--text); }
+  .box ul { margin:0; padding-left:18px; line-height:1.7; font-size:14px; }
+  .box a { color:var(--down); }
+  .tabs { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .tabs button { border:1px solid var(--line); background:var(--bg); color:var(--text); padding:5px 12px; border-radius:999px; cursor:pointer; font-size:13px; }
+  .tabs button.on { background:var(--text); color:var(--bg); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>가짜돈 1,000만원 모의투자</h1>
+  <div class="sub" id="sub"></div>
+  <div class="cards" id="cards"></div>
+  <div class="box">
+    <h2>수익률 비교 (시작=0%)</h2>
+    <div id="chart"></div>
+    <div class="note" id="chartnote"></div>
+  </div>
+  <div class="box">
+    <h2>보유 종목</h2>
+    <div class="tabs" id="tabs"></div>
+    <div class="tbl" id="hold"></div>
+  </div>
+  <div class="box">
+    <h2>매매 일지 (왜 샀고, 언제 점검하나)</h2>
+    <div class="tabs" id="jtabs"></div>
+    <div class="tbl" id="journal"></div>
+  </div>
+  <div class="box" id="ctxbox"></div>
+  <div class="box">
+    <h2>용어 사전 (처음 보는 말은 여기서)</h2>
+    <dl class="gl" id="gloss"></dl>
+  </div>
+  <div class="note" id="foot"></div>
+</div>
+<script>
+const D = /*DATA*/null;
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+const pct = n => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+const cls = n => n >= 0 ? 'pos' : 'neg';
+const INIT = D.config.initial_cash;
+const teams = Object.keys(D.teams);
+const colors = Object.fromEntries(teams.map(t => [t, D.config.teams[t].color]));
+colors['KOSPI'] = '#9ca3af'; colors['S&P500'] = '#6b7280';
+
+document.getElementById('sub').textContent =
+  `마지막 갱신 ${D.updated} · 기준일 ${D.dates[D.dates.length-1]} (미국 종목은 직전 거래일 종가) · 실제 돈이 아닌 모의투자예요`;
+
+// 요약 카드
+const cards = document.getElementById('cards');
+const card = (label, r, ret) =>
+  `<div class="card"><div class="t"><span class="dot" style="background:${r.c}"></span>${label} <span>${r.s}</span></div>
+   <div class="v">${won(r.v)}</div><div class="r ${cls(ret)}">${pct(ret)}</div></div>`;
+// 기준선(지수): 순위 없이 맨 위에 따로
+const benchRows = Object.keys(D.bench).map(b => ({n:b, v:D.bench[b].at(-1), s:'지수 기준선', c:colors[b]}));
+cards.insertAdjacentHTML('beforeend', `<div class="grp">기준선 · 지수를 그대로 샀다면 (순위 아님)</div>`);
+benchRows.forEach(r => cards.insertAdjacentHTML('beforeend', card(r.n, r, (r.v/INIT - 1)*100)));
+// 3팀만 순위
+const rows = teams.map(t => ({n:t, v:D.teams[t].nav.at(-1), s:D.config.teams[t].style, c:colors[t]}));
+rows.sort((a,b) => b.v - a.v);
+cards.insertAdjacentHTML('beforeend', `<div class="grp">팀 순위</div>`);
+rows.forEach((r,i) => cards.insertAdjacentHTML('beforeend', card(`${i+1}위 · ${r.n}`, r, (r.v/INIT - 1)*100)));
+
+// 꺾은선 차트
+(function chart() {
+  const W = 920, H = 320, L = 52, R = 78, T = 12, B = 28;
+  const series = {};
+  teams.forEach(t => series[t] = D.teams[t].nav.map(v => (v/INIT-1)*100));
+  Object.keys(D.bench).forEach(b => series[b] = D.bench[b].map(v => (v/INIT-1)*100));
+  const all = Object.values(series).flat();
+  let lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const pad = Math.max(1, (hi-lo)*0.15); lo -= pad; hi += pad;
+  const n = D.dates.length;
+  const x = i => L + (n === 1 ? 0 : i/(n-1)) * (W-L-R);
+  const y = v => T + (1 - (v-lo)/(hi-lo)) * (H-T-B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="팀별 수익률 추이">`;
+  const step = (hi-lo) > 20 ? 5 : (hi-lo) > 8 ? 2 : 1;
+  for (let v = Math.ceil(lo/step)*step; v <= hi; v += step) {
+    s += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" ${v===0?'stroke-width="1.5"':''}/>`;
+    s += `<text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}%</text>`;
+  }
+  const every = Math.max(1, Math.ceil(n/8));
+  D.dates.forEach((d,i) => { if (i%every===0 || i===n-1) s += `<text x="${x(i)}" y="${H-8}" text-anchor="middle">${d.slice(d==='시작'?0:5)}</text>`; });
+  Object.entries(series).forEach(([k,v]) => {
+    const dash = (k==='KOSPI'||k==='S&P500') ? 'stroke-dasharray="5 4"' : '';
+    const pts = v.map((p,i) => `${x(i)},${y(p)}`).join(' ');
+    s += `<polyline points="${pts}" fill="none" stroke="${colors[k]}" stroke-width="2.4" ${dash}/>`;
+    s += `<circle cx="${x(n-1)}" cy="${y(v.at(-1))}" r="3.5" fill="${colors[k]}"/>`;
+    s += `<text x="${x(n-1)+8}" y="${y(v.at(-1))+4}" style="fill:${colors[k]};font-weight:700">${k} ${pct(v.at(-1))}</text>`;
+  });
+  s += '</svg>';
+  document.getElementById('chart').innerHTML = s;
+  if (n <= 3) document.getElementById('chartnote').textContent = '아직 거래일이 적어서 선이 짧아요. 갱신할 때마다 이어집니다.';
+})();
+
+// 보유 종목 탭
+const tabs = document.getElementById('tabs');
+function showHold(t) {
+  [...tabs.children].forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  const v = D.teams[t];
+  let h = `<table><tr><th>종목</th><th>수량</th><th>평균단가</th><th>현재가</th><th>평가금액</th><th>손익</th></tr>`;
+  v.holdings.forEach(r => h += `<tr><td>${r.name}</td><td>${r.qty}</td><td>${won(r.avg_krw)}</td><td>${won(r.price_krw)}</td><td>${won(r.value)}</td><td class="${cls(r.pnl_pct)}">${pct(r.pnl_pct)}</td></tr>`);
+  h += `<tr><td>현금</td><td></td><td></td><td></td><td>${won(v.cash)}</td><td></td></tr></table>`;
+  h += `<div class="note">${D.config.teams[t].style} · ${D.config.teams[t].rule}</div>`;
+  document.getElementById('hold').innerHTML = h;
+}
+teams.forEach(t => { const b = document.createElement('button'); b.textContent = t; b.dataset.t = t; b.onclick = () => showHold(t); tabs.appendChild(b); });
+showHold(teams[0]);
+
+// 매매 일지
+function learnHtml(t) {
+  const L = D.learn.tickers[t.ticker];
+  if (!L) return '';
+  const w = (t.krw_gross / INIT * 100).toFixed(1);
+  return `<details class="study"><summary>📖 자세히 공부하기</summary>
+    <dl><dt>이 회사(상품)는?</dt><dd>${L.what}</dd>
+    <dt>어떻게 돈을 벌까?</dt><dd>${L.money}</dd>
+    <dt>왜 지금 이 종목?</dt><dd>${L.why}</dd>
+    <dt>이 매수의 크기</dt><dd>시작 자금의 ${w}% (${won(t.krw_gross)}). 한 종목에 너무 몰리지 않게 한 종목당 10~25%로 나눴어요.</dd>
+    <dt>위험은?</dt><dd>${L.risk}</dd>
+    <dt>같이 알아두면 좋은 용어</dt><dd>${L.term}</dd></dl></details>`;
+}
+const jtabs = document.getElementById('jtabs');
+function showJournal(team) {
+  [...jtabs.children].forEach(b => b.classList.toggle('on', b.dataset.t === team));
+  let j = `<table><tr><th>날짜</th><th>팀</th><th>종목</th><th>구분</th><th>수량</th><th>금액</th><th class="why">이유 · 점검 조건</th></tr>`;
+  const list = D.trades.filter(t => team === '전체' || t.team === team);
+  [...list].reverse().forEach(t => {
+    j += `<tr><td>${t.date}</td><td>${t.team}</td><td>${D.names[t.ticker]}</td><td>${t.side==='buy'?'매수':'매도'}</td><td>${t.qty}</td><td>${won(t.krw_gross)}</td>
+          <td class="why">${t.reason}<br>▸ ${t.exit_rule}${learnHtml(t)}</td></tr>`;
+  });
+  document.getElementById('journal').innerHTML = j + '</table>' +
+    (team !== '전체' ? `<div class="note">${D.config.teams[team].style} · ${D.config.teams[team].rule}</div>` : '');
+}
+['전체', ...teams].forEach(t => { const b = document.createElement('button'); b.textContent = t; b.dataset.t = t; b.onclick = () => showJournal(t); jtabs.appendChild(b); });
+showJournal('전체');
+const C = D.learn.context;
+document.getElementById('ctxbox').innerHTML = `<h2>${C.title}</h2><ul>${C.points.map(p => `<li>${p}</li>`).join('')}</ul>
+  <div class="note">출처: ${C.sources.map(s => `<a href="${s.u}" target="_blank" rel="noopener">${s.t}</a>`).join(' · ')}</div>`;
+document.getElementById('gloss').innerHTML = D.learn.glossary.map(g => `<dt>${g.w}</dt><dd>${g.d}</dd>`).join('');
+document.getElementById('foot').textContent = D.config.fees_note + ' 지수 기준선은 환율을 반영하지 않은 지수 등락률 그대로입니다. 이 페이지는 투자 권유가 아닙니다.';
+</script>
+</body>
+</html>

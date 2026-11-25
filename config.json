@@ -1,0 +1,36 @@
+{
+  "start_date": "2026-11-24",
+  "initial_cash": 10000000,
+  "fx_ticker": "KRW=X",
+  "fees": {
+    "KR": {"buy": 0.00015, "sell": 0.00215},
+    "US": {"buy": 0.0025, "sell": 0.0025}
+  },
+  "fees_note": "단순화한 가정값입니다. 한국: 수수료 0.015% + 매도 거래세 약 0.2%. 미국: 수수료 0.25%. 실제 증권사·연도별 세율과 다를 수 있어요.",
+  "benchmarks": {"KOSPI": "^KS11", "S&P500": "^GSPC"},
+  "teams": {
+    "과장": {"style": "안정·배당형", "color": "#2563eb", "rule": "지수 ETF + 방어주 + 금융지주. 손절 -12%, 비중 점검 위주"},
+    "대리": {"style": "성장·반등형", "color": "#ea580c", "rule": "대형 기술주 낙폭 후 반등 베팅. 손절 -15%, +30% 도달 시 절반 익절"},
+    "신입": {"style": "공격·테마형", "color": "#16a34a", "rule": "모멘텀·테마 종목 집중. 손절 -10%, +25% 도달 시 절반 익절"}
+  },
+  "tickers": {
+    "VOO": {"name": "뱅가드 S&P500 ETF", "market": "US"},
+    "SCHD": {"name": "슈왑 미국 배당 ETF", "market": "US"},
+    "KO": {"name": "코카콜라", "market": "US"},
+    "JNJ": {"name": "존슨앤존슨", "market": "US"},
+    "105560.KS": {"name": "KB금융", "market": "KR"},
+    "055550.KS": {"name": "신한지주", "market": "KR"},
+    "005930.KS": {"name": "삼성전자", "market": "KR"},
+    "000660.KS": {"name": "SK하이닉스", "market": "KR"},
+    "NVDA": {"name": "엔비디아", "market": "US"},
+    "GOOGL": {"name": "알파벳(구글)", "market": "US"},
+    "AAPL": {"name": "애플", "market": "US"},
+    "MSFT": {"name": "마이크로소프트", "market": "US"},
+    "TSLA": {"name": "테슬라", "market": "US"},
+    "PLTR": {"name": "팔란티어", "market": "US"},
+    "012450.KS": {"name": "한화에어로스페이스", "market": "KR"},
+    "373220.KS": {"name": "LG에너지솔루션", "market": "KR"},
+    "005380.KS": {"name": "현대차", "market": "KR"},
+    "035420.KS": {"name": "NAVER", "market": "KR"}
+  }
+}

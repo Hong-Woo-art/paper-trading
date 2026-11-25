@@ -1,0 +1,44 @@
+name: update-dashboard
+
+on:
+  schedule:
+    - cron: "40 7 * * 1-5"   # 평일 16:40 KST (한국장 마감 후)
+    - cron: "0 22 * * 1-5"   # 화~토 07:00 KST (미국장 마감 후)
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Update prices (retry up to 3 times)
+        run: |
+          for i in 1 2 3; do
+            python update.py && exit 0
+            sleep 60
+          done
+          exit 1
+      - run: mkdir _site && cp dashboard.html _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
