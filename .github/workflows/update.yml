@@ -2,8 +2,12 @@ name: update-dashboard
 
 on:
   schedule:
-    - cron: "40 7 * * 1-5"   # 평일 16:40 KST (한국장 마감 후)
-    - cron: "0 22 * * 1-5"   # 화~토 07:00 KST (미국장 마감 후)
+    # GitHub 예약은 늦거나 빠질 수 있어 여러 번 건다 (정각은 붐벼서 피함)
+    - cron: "47 6 * * 1-5"    # 평일 15:47 KST (한국장 마감 후)
+    - cron: "47 7 * * 1-5"    # 평일 16:47 KST (예비)
+    - cron: "17 9 * * 1-5"    # 평일 18:17 KST (예비)
+    - cron: "17 21 * * 1-5"   # 화~토 06:17 KST (미국장 마감 후)
+    - cron: "43 22 * * 1-5"   # 화~토 07:43 KST (예비)
   workflow_dispatch:
   push:
     branches: [main]
